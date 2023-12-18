@@ -1,25 +1,47 @@
-import logo from './logo.svg';
-import './App.css';
-
+import React, { useState } from 'react';
+import './App.css'
 function App() {
+  const [imagen, setImagen] = useState(null);
+  const [prediccion, setPrediccion] = useState('');
+
+  const enviarImagen = async () => {
+    if (!imagen) {
+      alert('Por favor, selecciona una imagen.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', imagen);
+
+    try {
+      const response = await fetch('http://localhost:5000/predict', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      setPrediccion(result.prediccion);
+    } catch (error) {
+      alert('Error al enviar la imagen: ' + error.message);
+    }
+  };
+
+  const handleImageChange = (e) => {
+    setImagen(e.target.files[0]);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <input type="file" onChange={handleImageChange} />
+      <button onClick={enviarImagen}>Enviar Imagen</button>
+      {prediccion && <div>Predicción: {prediccion}</div>}
     </div>
   );
 }
 
 export default App;
+
