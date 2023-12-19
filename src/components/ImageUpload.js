@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
-import './ImageUpload.css'; // Importar CSS
 
 function ImageUpload() {
   const [image, setImage] = useState(null);
-  const [prediction, setPrediction] = useState('');
+  const [especieInfo, setEspecieInfo] = useState({});
+  const [imageToShow, setImageToShow] = useState(null);
 
   const handleImageChange = (e) => {
-    setImage(e.target.files[0]);
+    const file = e.target.files[0];
+    if (file) {
+      setImage(file);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!image) {
-      alert('Por favor, selecciona una imagen.');
-      return;
-    }
+    if (!image) return;
 
     const formData = new FormData();
     formData.append('file', image);
@@ -24,25 +24,35 @@ function ImageUpload() {
         method: 'POST',
         body: formData,
       });
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
+      const data = await response.json();
+      if (data.especieInfo) {
+        setEspecieInfo(data.especieInfo);
+        setImageToShow(URL.createObjectURL(image)); // Actualizar imageToShow aquí
+      } else {
+        setEspecieInfo({ especie: 'Predicción no disponible' });
+        setImageToShow(null);
       }
-
-      const result = await response.json();
-      setPrediction(result.prediccion);
     } catch (error) {
-      alert('Error al enviar la imagen: ' + error.message);
+      console.error('Error al enviar la imagen:', error);
+      setEspecieInfo({ especie: 'Error al procesar la imagen' });
+      setImageToShow(null);
     }
   };
 
   return (
-    <div>
+    <div className="image-upload-container">
       <form onSubmit={handleSubmit}>
         <input type="file" onChange={handleImageChange} />
-        <button type="submit">Clasificar Imagen</button>
+        <button type="submit">Enviar Imagen</button>
       </form>
-      {prediction && <div>Clasificación: {prediction}</div>}
+      {especieInfo.especie && (
+        <>
+          <p>Especie: {especieInfo.especie}</p>
+          <p>Características: {especieInfo.caracteristicas}</p>
+          <p>Hábitat: {especieInfo.habitat}</p>
+          {imageToShow && <img src={imageToShow} alt="Imagen subida" style={{ maxWidth: '300px', maxHeight: '300px' }} />}
+        </>
+      )}
     </div>
   );
 }
